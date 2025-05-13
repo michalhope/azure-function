@@ -1,27 +1,25 @@
 import azure.functions as func
-import datetime
-import json
 import logging
+from case_timeout import handle_timeout_case
+from case_auth import handle_auth_case
 
 app = func.FunctionApp()
 
 @app.route(route="MyFunction", auth_level=func.AuthLevel.FUNCTION)
-def MyFunction(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('bad Python HTTP trigger function processed a request.')
+async def MyFunction(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info("🚀 Function started.")
 
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
+    case = req.params.get("case", "").lower()
 
-    if name:
-        return func.HttpResponse(f"bad Hello, {name}. This HTTP triggered function executed successfully.")
+    if case == "timeout":
+        return await handle_timeout_case()
+    
+    elif case == "auth":
+        return handle_auth_case(req)
+    
     else:
+        logging.info("ℹ️ No valid 'case' parameter provided. Returning default response.")
         return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=500
-        )
+        "👋 Hello! Please specify a case (?case=timeout or ?case=auth).",
+        status_code=200
+    )
